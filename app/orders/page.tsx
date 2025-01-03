@@ -118,7 +118,7 @@ export default function OrdersPage() {
 
                       <div className="text-right">
                         <p className="text-2xl font-bold mb-4">
-                          ${order.amount.toFixed(2)}
+                          Rs.{order.amount.toFixed(2)}
                         </p>
                         {order.status === "completed" && (
                           <a

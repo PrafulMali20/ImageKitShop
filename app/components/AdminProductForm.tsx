@@ -137,7 +137,7 @@ export default function AdminProductForm() {
             </div>
 
             <div className="form-control">
-              <label className="label">Price ($)</label>
+              <label className="label">Price (Rs.)</label>
               <input
                 type="number"
                 step="0.01"

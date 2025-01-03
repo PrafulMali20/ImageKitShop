@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       variant,
       razorpayOrderId: order.id,
       amount: variant.price,
-      status: "pending",
+      status: "pending", // Initial status is pending
     });
 
     return NextResponse.json({
@@ -49,6 +49,52 @@ export async function POST(req: NextRequest) {
     console.error("Error creating order:", error);
     return NextResponse.json(
       { error: "Failed to create order" },
+      { status: 500 }
+    );
+  }
+}
+
+// This is an example of handling the webhook for updating payment status
+export async function PATCH(req: NextRequest) {
+  try {
+    // Read the raw body from the request
+    const rawBody = await req.text(); // Get the raw body as text
+    const { razorpayOrderId, paymentId, signature } = await req.json();
+
+    // Verify payment signature with Razorpay
+    const isSignatureValid = Razorpay.validateWebhookSignature(
+      rawBody,
+      signature,
+      process.env.RAZORPAY_WEBHOOK_SECRET!
+    );
+
+    if (!isSignatureValid) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+
+    // Find the order in your database
+    const order = await Order.findOne({ razorpayOrderId });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Update the status based on payment outcome
+    if (paymentId && isSignatureValid) {
+      // Payment successful
+      order.status = "successful";
+    } else {
+      // Payment failed
+      order.status = "failed";
+    }
+
+    await order.save();
+
+    return NextResponse.json({ message: "Order updated successfully" });
+  } catch (error) {
+    console.error("Error processing payment:", error);
+    return NextResponse.json(
+      { error: "Failed to update order" },
       { status: 500 }
     );
   }
